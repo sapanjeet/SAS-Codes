@@ -1,0 +1,342 @@
+** ASSIGNMENT Solution for Class Students;
+** SAPANJEET CHATWAL Teaching Assistant for Base SAS at University of Connecticut;
+** NET ID: sns16107;
+
+
+* QUESTION 1 Merge datasets
+
+A wildlife rescue center maintains a database consisting of two SAS data sets called FRIENDS and NEWINFO. 
+The FRIENDS data set contains one observation for each supporter. Every time the center receives a donation, 
+the staff add an observation to the NEWINFO data set. They also add an observation to NEWINFO every time there is
+ a new volunteer or a change of address. To create an up-to-date data set of supporters, the staff need to combine 
+the NEWINFO data set with the FRIENDS data set.;
+
+* ANS 1:;
+
+DATA FRIENDS;
+	SET 'P:\SAS\A2\friends.sas7bdat';
+RUN;
+
+PROC PRINT DATA= FRIENDS;
+RUN;
+
+* THE DATASET FRIENDS IS SORT BASED ON ID;
+
+DATA NEWINFO;
+	SET 'P:\SAS\A2\newinfo.sas7bdat';
+RUN;
+
+PROC PRINT DATA= NEWINFO;
+RUN;
+
+* THE DATASET NEWINFO IS NOT SORTED;
+
+/* THE VARIABLES COMMON TO BOTH DATASETS ARE ID, FIRSTNAME, LASTNAME, ADDRESS, CITY, STATE, VOLUNTEER.
+THE DATASET NEWINFO HAS TWO ADDITIONAL VARIABLES CAMPAIGN AND DONATION. THE DATASET FRIENDS DOES NOT HAVE ANY UNIQUE VARIABLE*/
+
+* ANS 2:;
+
+* SORTING AND CREATING A BACKUP;
+PROC SORT DATA= FRIENDS OUT=FRIENDS_BK;
+	BY ID;
+PROC PRINT DATA=FRIENDS_BK;
+	TITLE 'FRIENDS - BACK UP COPY';
+RUN;
+
+PROC SORT DATA= NEWINFO;
+	BY ID;
+PROC PRINT DATA= NEWINFO;
+RUN;
+
+DATA FRIENDS_MERGED;
+	MERGE NEWINFO FRIENDS;
+	BY ID;
+RUN;
+
+PROC SORT DATA = FRIENDS_MERGED;
+	BY ID; 
+RUN;
+
+PROC PRINT DATA=FRIENDS_MERGED;
+	VAR ID FIRSTNAME LASTNAME ADDRESS CITY STATE VOLUNTEER;
+	TITLE "MERGED DATASET";
+RUN;
+
+* RETAINING NULL VALUES IN THE MERGED DATASET SINCE NOTHING CLEARLY HAS BEEN MENTIONED IN THE QUESTION;
+
+* ANS 3:;
+
+PROC MEANS DATA = NEWINFO NOPRINT NWAY;
+	CLASS ID;
+	VAR DONATION;
+	OUTPUT OUT = NEWINFO2 SUM = DONATION_SUM;
+RUN;
+PROC PRINT DATA = NEWINFO2;
+RUN;
+
+
+DATA FRIENDS_DONATION;
+	MERGE FRIENDS NEWINFO2 ;
+	BY ID;
+RUN;
+
+PROC PRINT DATA= FRIENDS_DONATION;
+	VAR ID FIRSTNAME LASTNAME DONATION_SUM;
+RUN;
+
+* RETAINING NULL VALUES SINCE NOTHING CLEARLY HAS BEEN MENTIONED IN THE QUESTION;
+
+
+************************************************************************************************************;
+
+*QUESTION 2 Visualize data
+
+The United States Geological Survey provides data on earthquakes of historical interest. The SAS data set called EARTHQUAKES 
+contains data about earthquakes with a magnitude greater than 2.5 in the United States and its territories. The variables are
+year, month, day, state, and magnitude.;
+
+* ANS A :;
+DATA EARTHQUAKES;
+	SET 'P:\SAS\A2\earthquakes.sas7bdat';
+	IF YEAR>=2000;
+RUN;
+
+PROC PRINT DATA= EARTHQUAKES;
+RUN;
+PROC SORT DATA = EARTHQUAKES;
+	BY YEAR; 
+RUN;
+
+PROC SGPLOT DATA= EARTHQUAKES;
+	SCATTER X= YEAR Y= MAGNITUDE;
+	XAXIS LABEL= 'YEAR'; 
+	YAXIS LABEL= 'MAGNITUDE';
+	TITLE 'SCATTER PLOT';
+RUN;
+
+* ANS B :;
+
+PROC MEANS DATA = EARTHQUAKES NOPRINT NWAY;
+	CLASS YEAR;
+	VAR MAGNITUDE;
+	OUTPUT OUT = EQ MEAN = MAG_MEAN;
+RUN;
+PROC PRINT DATA = EQ;
+RUN;
+
+DATA EQM;
+	MERGE EARTHQUAKES EQ;
+	BY YEAR;
+RUN;
+PROC PRINT DATA= EQM;
+RUN;
+
+PROC SGPLOT DATA = EQM;
+	SERIES X = YEAR Y= MAG_MEAN /lineattrs=(color=RED);
+	XAXIS TYPE = DISCRETE;
+	YAXIS LABEL = 'TIME SERIES';
+	SCATTER X= YEAR Y= MAGNITUDE;
+	XAXIS LABEL= 'YEAR';
+	YAXIS LABEL= 'MAGNITUDE';
+	TITLE 'OVERLAY PLOT';
+RUN;
+
+* ANS C:;
+
+PROC SGPLOT DATA = EQM;
+	SERIES X = YEAR Y= MAG_MEAN /lineattrs=(color=RED) NAME = 'MEAN';
+	XAXIS TYPE = DISCRETE;
+	YAXIS LABEL = 'TIME SERIES';
+	SCATTER X= YEAR Y= MAGNITUDE;
+	XAXIS LABEL= 'YEAR'; 
+	YAXIS LABEL= 'MAGNITUDE';
+	TITLE 'OVERLAY PLOT';
+	KEYLEGEND 'MEAN'/NOBORDER POSITION = BOTTOMRIGHT TITLE = 'MEAN';
+RUN;
+
+
+* ANS D:;
+
+PROC SGPLOT DATA = EQM;
+	SERIES X = YEAR Y= MAG_MEAN /lineattrs=(color=RED) NAME = 'MEAN';
+	REFLINE 4 5 6 7 8/ TRANSPARENCY = 0.5 LABEL = ('LIGHT' 'MODERATE' 'STRONG' 'MAJOR' 'GREAT') LINEATTRS=(PATTERS=20);
+	XAXIS TYPE = DISCRETE;
+	YAXIS LABEL = 'TIME SERIES';
+	SCATTER X= YEAR Y= MAGNITUDE;
+	XAXIS LABEL= 'YEAR';
+	YAXIS LABEL= 'MAGNITUDE';
+	TITLE 'OVERLAY PLOT';
+	KEYLEGEND 'MEAN'/NOBORDER POSITION = BOTTOMRIGHT TITLE = 'MEAN';
+RUN;
+
+* ANS E:; 
+PROC SGPLOT DATA = EQM;
+	SERIES X = YEAR Y= MAG_MEAN /lineattrs=(color=RED) NAME = 'MEAN';
+	REFLINE 4 5 6 7 8/ TRANSPARENCY = 0.5 LABEL = ('LIGHT' 'MODERATE' 'STRONG' 'MAJOR' 'GREAT') LINEATTRS=(PATTERS=20);
+	XAXIS TYPE = DISCRETE;
+	YAXIS LABEL = 'TIME SERIES';
+	SCATTER X= YEAR Y= MAGNITUDE;
+	XAXIS LABEL= 'YEAR' VALUES=(2000 TO 2011 BY 1);
+	YAXIS LABEL= 'MAGNITUDE';
+	TITLE 'OVERLAY PLOT';
+	KEYLEGEND 'MEAN'/NOBORDER POSITION = BOTTOMRIGHT TITLE = 'MEAN';
+RUN;
+	
+************************************************************************************************;
+
+* QUESTION 3 Specific PROC Use;
+
+* Suppose that at a local university the study guidelines for the College of Science and Math are to study two to three 
+hours per unit per week. The instructor of the class, Orientation to the Statistics Major, takes these guidelines very 
+seriously. He asks students to record their study time each week, and at the end of the term he compares their average 
+study time per week to their term GPA. The SAS data set called STUDY_GPA contains student identification information, 
+orientation course-section number, number of units enrolled, average time studied, and term GPA.
+
+* ANS A:;
+
+DATA GPA;
+	SET 'P:\SAS\A2\study_gpa.sas7bdat';
+RUN;
+
+PROC PRINT DATA = GPA LABEL;
+RUN;
+
+PROC CONTENTS DATA= GPA;
+RUN;
+
+* LABELS ARE DISPLAYED AND THE VARIABLE ATTRIBUTES ARE STUDIED;
+
+PROC SGPLOT DATA = GPA;
+	VBOX AVETIME/ CATEGORY = SECTION;
+	TITLE 'BOX PLOT OF GPA VS SECTION';
+RUN;
+
+* ANS B:;
+
+PROC SGPLOT DATA = GPA NOCYCLEATTRS NOAUTOLEGEND;
+	REG X = AVETIME Y = GPA / CLI CLM;
+RUN;
+
+PROC REG DATA = GPA;
+	MODEL GPA = AVETIME;
+RUN;
+* THE ABOVE REG CODE IS USED FOR REGRESSION BUT WILL HAVE LEGEND. SO USING SGPLOT FOR THE SAME;
+
+* ANS C:;
+
+PROC SGPLOT DATA = GPA;
+	REG X = AVETIME Y = GPA / GROUP = SECTION;
+	TITLE 'TWO SECTION REGRESSION COMPARISON';
+	KEYLEGEND /POSITION = RIGHT;
+RUN;
+
+* CONSIDERING FAR RIGHT AS RIGHT MOST LOCATION IN THE PLOT GRAPH;
+
+* ANS D:;
+
+PROC SGPLOT DATA = GPA;
+	REG X = AVETIME Y = GPA / GROUP = SECTION CLI CLM CLMTRANSPARENCY = 0.7;
+	TITLE 'TWO SECTION REGRESSION COMPARISON';
+	KEYLEGEND /POSITION = RIGHT;
+RUN;
+
+* ANS E:;
+* PLOT 1 (BOTH SECTIONS)- THE GPA VALUE IS RANDOM AND IS NOT DEPENDEDNT ON THE AVERAGE STUDY TIME IF 
+THE DATA FOR BOTH SECTIONS ARE COMBINDED
+* PLOT 2 (SECTION 1)- THE GPA VALUE DECREASES WITH THE INCREASE IN AVERAGE STUDY TIME FOR SECTION 1
+* PLOT 3 (SECTION 2)- THE GPA VALUE INCREASES WITH THE INCREASE IN AVERAGE STUDY TIME FOR SECTION 2
+
+************************************************************************************************;
+
+* QUESTION 4. Specific PROC Use
+
+* The local public transportation company would like to conduct a study of the impact of three possible plans on a certain 
+popular bus route in town. Plan one consists of traffic lights timed in sync via a special remote transmitter on the bus that 
+interacts with the traffic signal. Plan two consists of shutting down a regular traffic lane to become an express lane for 
+buses only. Plan three is the current normal bus route with no changes. To assess the impact of a change, the company 
+implemented plan one for a month, and then implemented plan two for a different month. All three plans were measured during 
+summer months to ensure consistency in weather. The time (in minutes) for a bus to complete its route was measured for randomly 
+selected weekdays and weekends, and these data are stored in the SAS data set called BUS.;
+
+* ANS A;
+
+DATA BUS;
+	SET 'P:\SAS\A2\bus.sas7bdat';
+RUN;
+
+PROC PRINT DATA = BUS LABEL;
+RUN;
+
+PROC CONTENTS DATA= BUS;
+RUN;
+
+* LABELS ARE DISPLAYED AND THE VARIABLE ATTRIBUTES ARE STUDIED;
+
+PROC MEANS MEAN MEDIAN STDDEV MAXDEC=1 DATA = BUS;
+RUN;
+
+* ANS B:;
+
+PROC SORT DATA = BUS OUT = SBUS;
+	BY DAY;
+RUN;
+PROC PRINT DATA = SBUS;
+RUN;
+
+
+PROC TRANSPOSE DATA = SBUS OUT = TBUS;
+	VAR PLAN1 PLAN2 PLAN3;
+RUN;
+PROC PRINT DATA = TBUS;
+RUN;
+
+PROC TRANSPOSE DATA = TBUS OUT = TTBUS  (RENAME = (_NAME_ = PLAN COL1 = TIME)); 
+	VAR COL1-COL10;
+	BY _NAME_;
+RUN;
+PROC PRINT DATA = TTBUS;
+RUN;
+
+PROC ANOVA DATA = TTBUS;
+	CLASS PLAN;
+	MODEL TIME = PLAN; 
+	MEANS PLAN / TUKEY;
+	TITLE 'BUS PLANS TIME COMPARISON'; 
+RUN;
+
+* THE P-VALUE IS MUCH LOWER THAN ALPHA=0.05 AND HENCE WE CAN CONCLUDE THAT THE MEANS TRAVEL TIME BETWEEN THE 
+DIFFERENT BUS ROUTE PLANS ARE SIGNIFICANTLY DIFFERENT;
+
+* ANS C:;
+
+PROC TTEST DATA = TTBUS;
+	WHERE PLAN IN ('Plan1','Plan2');
+	CLASS PLAN;
+	VAR TIME;
+RUN;
+PROC TTEST DATA = TTBUS;
+	WHERE PLAN IN ('Plan1','Plan3');
+	CLASS PLAN;
+	VAR TIME;
+RUN;
+PROC TTEST DATA = TTBUS;
+	WHERE PLAN IN ('Plan2','Plan3');
+	CLASS PLAN;
+	VAR TIME;
+RUN;
+
+* ANS D:;
+* THE MEAN TIMES FOR THE 3 DIFFERENT BUS ROUTE PLANS ARE SIGNIFICANTLY DIFFERENT FROM EACH OTHER.
+THE MEAN TRAVEL TIME FOR PLAN 1 IS 20.3 MINUTES, PLAN 2 IS 28.7 AND PLAN 3 IS 30.5.
+
+* THUS THE CURRENT PLAN IS THE WORST OPTION AND HAS THE HIGHEST TRAVEL TIME;
+
+* THE CITY SHOULD ADOPT AND IMPLEMENT PLAN 1 WHICH WOULD CUT DOWN TRAVEL TIME BY OVER 33% FROM THE EXISTING PLAN;
+
+********************************************************************************************************************;
+
+
+
+
+
+
