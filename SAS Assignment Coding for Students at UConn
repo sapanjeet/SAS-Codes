@@ -1,0 +1,64 @@
+*crayon number- numeric, color name- character, hexadecimal code -charatcer, RGB triplet-character , 
+pack size- numeric, year issued-numeric,  year retired- numeric;
+
+DATA exerdata.Crayons;
+INFILE '/folders/myshortcuts/myFolder/codesanddatasets.part1/Datasets/Crayons.dat' truncover;
+INPUT crayonnumber 1-3 colorname $4-31 hexadecimalcode $ 32-40 RGBtriplet $ 41-57 packsize yearissued yearretired ;
+format Popularity $8.;
+If packsize<=16 then Popularity='popular';
+else if packsize<=48 then Popularity='uncommon';
+else Popularity='rare';
+run;
+
+proc sort data=exerdata.crayons;
+by popularity;
+run;
+
+proc freq data=exerdata.crayons;
+Table popularity;
+run;
+
+Data exerdata.rare_colors (where=(popularity='rare'));
+set exerdata.crayons;
+run;
+
+proc sort data=exerdata.rare_colors;
+by yearissued colorname;
+where countw(colorname)>1;
+
+proc print data=exerdata.rare_colors (obs=5);
+title 'First 5 rare color report';
+
+*Question 2;
+
+DATA exerdata.Hotel;
+INFILE '/folders/myshortcuts/myFolder/codesanddatasets.part1/Datasets/Hotel.dat' ;
+INPUT roomnumber numberofguests chinmonth chinday chinyear choutmonth  choutday choutyear useofwirelessInternetservice $42-46 
+numberofdaysofInternetuse 47-52  roomtype $53-68 roomrate;
+checkin_date=input(catx("/",chinmonth,chinday,chinyear),mmddyy10.); 
+ checkinweekday=checkin_date;
+ checkout_date=input(catx("/",choutmonth,choutday,choutyear),mmddyy10.); 
+ checkoutweekday=checkout_date;
+ noofdays=DATDIF(checkin_date,checkout_date,'act/act');
+format checkin_date mmddyy10. checkinweekday weekdate9. checkout_date mmddyy10. checkoutweekday weekdate9.;
+Subtotal=(roomrate*noofdays) +10*(numberofguests-1)*noofdays;
+if useofwirelessInternetservice ='YES' then Subtotal=subtotal+9.95+4.95*numberofdaysofInternetuse;
+Grandtotal= subtotal+ (7.75*subtotal/100);
+format Grandtotal dollar8.2;
+  RUN;
+  
+  PROC SORT data=exerdata.hotel;
+  by descending Grandtotal;
+  run;
+  proc print data=exerdata.hotel(obs=5);
+  
+PROC SORT data=exerdata.hotel;
+  by  useofwirelessInternetservice;
+  run;
+PROC means data=exerdata.hotel;
+ by  useofwirelessInternetservice;
+var noofdays numberofguests;
+
+proc freq data=exerdata.hotel;
+table roomtype * checkinweekday;
+ title 'Cross table';
